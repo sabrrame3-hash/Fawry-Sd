@@ -1,0 +1,40 @@
+@import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@300;400;500;600;700&display=swap');
+@import "tailwindcss";
+
+@theme {
+  --font-sans: "IBM Plex Sans Arabic", "Inter", ui-sans-serif, system-ui, sans-serif;
+  
+  --color-fawry-purple: #800080;
+  --color-fawry-light-purple: #c8a2c8;
+  --color-fawry-dark: #2d0a4e;
+  --color-fawry-magenta: #a000a0;
+  --color-fawry-action: #700070;
+}
+
+@layer base {
+  body {
+    @apply bg-fawry-dark text-white;
+  }
+}
+
+.fawry-gradient {
+  background: linear-gradient(180deg, #1a023a 0%, #7d009b 100%);
+}
+
+@keyframes spin-slow {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+@keyframes reverse-spin-slow {
+  from { transform: rotate(360deg); }
+  to { transform: rotate(0deg); }
+}
+
+.animate-spin-slow {
+  animation: spin-slow 3s linear infinite;
+}
+
+.animate-reverse-spin-slow {
+  animation: reverse-spin-slow 2s linear infinite;
+}

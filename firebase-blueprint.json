@@ -1,0 +1,63 @@
+{
+  "entities": {
+    "User": {
+      "title": "User",
+      "description": "User profile and financial summary",
+      "type": "object",
+      "properties": {
+        "uid": { "type": "string" },
+        "name": { "type": "string" },
+        "email": { "type": "string" },
+        "balance": { "type": "number" },
+        "accountNumber": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["uid", "name", "email", "balance", "accountNumber"]
+    },
+    "Transfer": {
+      "title": "Transfer",
+      "description": "A financial transfer transaction",
+      "type": "object",
+      "properties": {
+        "senderId": { "type": "string" },
+        "senderAccountNumber": { "type": "string" },
+        "receiverAccountNumber": { "type": "string" },
+        "amount": { "type": "number" },
+        "beneficiaryName": { "type": "string" },
+        "referenceNumber": { "type": "string" },
+        "type": { "type": "string" },
+        "bankName": { "type": "string" },
+        "timestamp": { "type": "string", "format": "date-time" }
+      },
+      "required": ["senderId", "senderAccountNumber", "receiverAccountNumber", "amount", "beneficiaryName", "referenceNumber", "type", "timestamp"]
+    },
+    "Payment": {
+      "title": "Payment",
+      "description": "An electronic payment transaction (utilities, telecom, etc.)",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string" },
+        "category": { "type": "string" },
+        "provider": { "type": "string" },
+        "amount": { "type": "number" },
+        "billNumber": { "type": "string" },
+        "timestamp": { "type": "string", "format": "date-time" }
+      },
+      "required": ["userId", "category", "provider", "amount", "timestamp"]
+    }
+  },
+  "firestore": {
+    "/users/{userId}": {
+      "schema": "User",
+      "description": "User profiles"
+    },
+    "/transfers/{transferId}": {
+      "schema": "Transfer",
+      "description": "Transfer transaction history"
+    },
+    "/payments/{paymentId}": {
+      "schema": "Payment",
+      "description": "Payment transaction history"
+    }
+  }
+}

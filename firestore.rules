@@ -1,0 +1,105 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // -------------------------------------------------------------------------
+    // GLOBAL HELPERS
+    // -------------------------------------------------------------------------
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isUserVerified() {
+      return isSignedIn() && request.auth.token.email_verified == true;
+    }
+
+    function isOwner(userId) {
+      return isSignedIn() && request.auth.uid == userId;
+    }
+
+    function isValidId(id) {
+      return id is string && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+
+    function incoming() {
+      return request.resource.data;
+    }
+
+    function existing() {
+      return resource.data;
+    }
+
+    // -------------------------------------------------------------------------
+    // ENTITY VALIDATORS
+    // -------------------------------------------------------------------------
+    
+    function isValidUser(data) {
+      return data.keys().hasAll(['uid', 'name', 'email', 'balance', 'accountNumber']) &&
+             data.keys().size() == 5 &&
+             data.uid == request.auth.uid &&
+             data.name is string && data.name.size() > 0 && data.name.size() < 100 &&
+             data.email == request.auth.token.email &&
+             data.balance is number && data.balance >= 0 &&
+             data.accountNumber is string && data.accountNumber.size() == 10;
+    }
+
+    function isValidTransfer(data) {
+      return data.keys().hasAll(['senderId', 'senderAccountNumber', 'receiverAccountNumber', 'amount', 'beneficiaryName', 'referenceNumber', 'type', 'timestamp']) &&
+             (data.keys().size() == 8 || (data.keys().size() == 9 && 'bankName' in data)) &&
+             data.senderId == request.auth.uid &&
+             data.senderAccountNumber is string &&
+             data.receiverAccountNumber is string && data.receiverAccountNumber.size() > 0 &&
+             data.amount is number && data.amount > 0 &&
+             data.beneficiaryName is string &&
+             data.referenceNumber is string &&
+             data.type is string &&
+             data.timestamp == request.time;
+    }
+
+    function isValidPayment(data) {
+      return data.keys().hasAll(['userId', 'category', 'provider', 'amount', 'timestamp']) &&
+             (data.keys().size() == 5 || (data.keys().size() == 6 && 'billNumber' in data)) &&
+             data.userId == request.auth.uid &&
+             data.category is string &&
+             data.provider is string &&
+             data.amount is number && data.amount > 0 &&
+             data.timestamp == request.time;
+    }
+
+    // -------------------------------------------------------------------------
+    // ACCESS RULES
+    // -------------------------------------------------------------------------
+
+    // Default deny
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    match /users {
+      allow list: if isSignedIn();
+    }
+
+    match /users/{userId} {
+      allow get: if isOwner(userId);
+      allow create: if isOwner(userId) && isValidUser(incoming());
+      allow update: if isOwner(userId) && 
+                      isValidUser(incoming()) && 
+                      // Prevent balance hijacking from client (in a real app, this should only be done via Cloud Functions)
+                      // For this app, we'll allow it but ensure uid and accountNumber are immutable.
+                      incoming().uid == existing().uid &&
+                      incoming().accountNumber == existing().accountNumber &&
+                      incoming().email == existing().email;
+    }
+
+    match /transfers/{transferId} {
+      allow list: if isSignedIn() && resource.data.senderId == request.auth.uid;
+      allow get: if isSignedIn() && resource.data.senderId == request.auth.uid;
+      allow create: if isSignedIn() && isValidTransfer(incoming());
+    }
+
+    match /payments/{paymentId} {
+      allow list: if isSignedIn() && resource.data.userId == request.auth.uid;
+      allow get: if isSignedIn() && resource.data.userId == request.auth.uid;
+      allow create: if isSignedIn() && isValidPayment(incoming());
+    }
+  }
+}
